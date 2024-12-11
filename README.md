@@ -38,7 +38,8 @@ The code is very simple, you need to setup the PIO by calling:
 snes_controller_init(pio0, CLOCK_PIN, DATA_PIN);
 ```
 
-The latch pin is assumed to be the next in sequence after clock.
+You can use any available PIO; the example code uses `pio0`.  The
+latch pin is assumed to be the next in sequence after clock.
 
 After initialization, you can read the controller state at any point with:
 
@@ -66,17 +67,17 @@ buttons appear in the bits in the following order:
 | Bit  | Button      |
 |-----:|-------------|
 | 0    | B           |
-| 0    | Y           |
-| 0    | SELECT      |
-| 0    | START       |
-| 0    | UP          |
-| 0    | DOWN        |
-| 0    | LEFT        |
-| 0    | RIGHT       |
-| 0    | A           |
-| 0    | X           |
-| 0    | L           |
-| 0    | R           |
+| 1    | Y           |
+| 2    | SELECT      |
+| 3    | START       |
+| 4    | UP          |
+| 5    | DOWN        |
+| 6    | LEFT        |
+| 7    | RIGHT       |
+| 8    | A           |
+| 9    | X           |
+| 10   | L           |
+| 10   | R           |
 
 ## License
 
