@@ -1,0 +1,49 @@
+.program snes_controller
+.side_set 2
+
+; pins:
+; - CLOCK is side-set 0
+; - LATCH is side-set 1
+; - DATA  is input 0
+
+    pull              side 0b01       ; read number of bits to sample (stall)
+    mov x, osr        side 0b11  [1]  ; [2 cycles]        clock up    latch up
+    nop               side 0b01       ; [1 cycle ]        clock up    latch down
+
+bitloop:
+    in pins, 1        side 0b00       ; [1 cycle ]  READ  clock down  latch down
+    jmp x-- bitloop   side 0b01       ; [1 cycle ]        clock up    latch down
+
+    push              side 0b01       ; send sampled bits
+
+.wrap
+
+% c-sdk {
+#include "hardware/gpio.h"
+
+static inline void snes_controller_program_init(PIO pio, uint sm, uint prog_offset, float clkdiv, uint pin_clock, uint pin_data) {
+    pio_sm_config cfg = snes_controller_program_get_default_config(prog_offset);
+    sm_config_set_in_pins(&cfg, pin_data);
+    sm_config_set_sideset_pins(&cfg, pin_clock);  // pin_latch = pin_clock+1
+    sm_config_set_clkdiv(&cfg, clkdiv);
+
+    // LATCH is low, CLOCK is high
+    pio_sm_set_pins_with_mask(pio, sm, 1, 3u << pin_clock);
+    
+    // DATA is in, LATCH and CLOCK are out
+    //pio_sm_set_pindirs_with_mask(pio, sm, (1u << pin_data) | (3u << pin_clock), 3u << pin_clock);
+    pio_sm_set_consecutive_pindirs(pio, sm, pin_data, 1, false);
+    pio_sm_set_consecutive_pindirs(pio, sm, pin_clock, 2, true);
+
+    sm_config_set_in_shift(&cfg, false, false, 32);
+    sm_config_set_out_shift(&cfg, true, false, 32);
+    
+    // init pins
+    pio_gpio_init(pio, pin_clock);
+    pio_gpio_init(pio, pin_clock+1);
+    pio_gpio_init(pio, pin_data);
+
+    pio_sm_init(pio, sm, prog_offset, &cfg);
+    pio_sm_set_enabled(pio, sm, true);
+}
+%}
